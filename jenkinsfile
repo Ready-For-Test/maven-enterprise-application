@@ -1,0 +1,21 @@
+node{
+    
+    
+    def mavenhome = tool name : "maven3.8.2" 
+    
+    properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')), pipelineTriggers([githubPush()])])
+    
+    
+    stage('Git'){
+        git branch: 'master', credentialsId: '01eccfc8-247c-48da-89df-0e451d9ef918', url: 'https://github.com/Ready-For-Test/maven-web-application.git'
+    }
+    stage('Build'){
+        sh "${mavenhome}/bin/mvn clean package"
+    }
+    stage('Nexus Repository Upload'){
+        sh "${mavenhome}/bin/mvn clean deploy"
+    }
+    sshagent(['0be97c2f-5727-41f7-8150-d5dd8b39a1b2']) {
+     sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@172.31.23.72:/opt/apache-tomcat-9.0.53/webapps"
+}
+}
